@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.env.*
+venv/
+.git/
+.gitignore
+Dockerfile
+CSDL_DaLieu_WebApp_Feature_Spec_v1.0.docx
+DermScreen_Feature_Spec_v1.0.docx
+node_modules/

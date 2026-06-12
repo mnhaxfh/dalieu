@@ -1,0 +1,55 @@
+{
+  "auth": {
+    "login": {
+      "access_token": "<jwt>",
+      "token_type": "bearer"
+    }
+  },
+  "examinations": {
+    "items": [
+      {
+        "id": 1,
+        "patient_id": "DS-AB12CD34",
+        "photo_url": "static/uploads/sample1.jpg",
+        "age": 32,
+        "sex": "Male",
+        "chief_complaint": "Rash on arm",
+        "known_conditions": {"diabetes": "Type 2"},
+        "status": "Pending",
+        "doctor_feedback": null,
+        "worker_id": 1,
+        "doctor_id": null,
+        "created_at": "2026-05-25T09:15:00Z",
+        "updated_at": null
+      },
+      {
+        "id": 2,
+        "patient_id": "DS-XY98ZT11",
+        "photo_url": "static/uploads/sample2.jpg",
+        "age": 45,
+        "sex": "Female",
+        "chief_complaint": "Itchy patch on leg",
+        "known_conditions": {"allergies": "penicillin"},
+        "status": "Completed",
+        "doctor_feedback": "Likely eczema. Start topical steroid.",
+        "worker_id": 1,
+        "doctor_id": 2,
+        "created_at": "2026-05-24T10:10:00Z",
+        "updated_at": "2026-05-25T08:30:00Z"
+      }
+    ],
+    "page": 1,
+    "page_size": 10,
+    "total": 2
+  },
+  "notifications": [
+    {
+      "id": 1,
+      "title": "Cap nhat ca kham",
+      "message": "Ca kham DS-XY98ZT11 da chuyen sang trang thai Completed.",
+      "is_read": false,
+      "examination_id": 2,
+      "created_at": "2026-05-25T08:35:00Z"
+    }
+  ]
+}
