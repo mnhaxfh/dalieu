@@ -1,2 +1,8 @@
 node_modules/
 .env
+.postman/
+.idea/
+apidoc.yaml
+DermScreen_ImageProcessing_Spec_v1.1.docx
+postman
+skin training.zip

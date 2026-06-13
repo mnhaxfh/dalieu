@@ -54,9 +54,13 @@ export default function MaskScreen() {
 
     (async () => {
       try {
-        // Skia v2: Skia.Data.fromURI is the async loader for file:// and https:// URIs
-        const data = await Skia.Data.fromURI(uri);
+        // Thay vì dùng Skia.Data.fromURI trực tiếp, đọc file thành base64 rồi decode:
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        const data = Skia.Data.fromBase64(base64);
         const img = Skia.Image.MakeImageFromEncoded(data);
+
         if (img) {
           setSkiaImage(img);
         } else {
@@ -99,20 +103,34 @@ export default function MaskScreen() {
   const handleNext = async () => {
     if (!canvasRef.current) return;
     try {
+      // Đợi 1 frame để đảm bảo canvas đã render xong
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const snapshot = canvasRef.current.makeImageSnapshot();
-      if (snapshot) {
-        const base64Data = snapshot.encodeToBase64();
-        const fileUri = FileSystem.cacheDirectory + `masked_${Date.now()}.jpg`;
-        await FileSystem.writeAsStringAsync(fileUri, base64Data, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        setMaskedImage(fileUri, false, paths.length > 0);
-        router.push('/new-exam/crop');
+      if (!snapshot) {
+        console.error('Snapshot returned null');
+        return;
       }
+      
+      // Dùng encodeToBase64 với format cụ thể
+      const base64Data = snapshot.encodeToBase64();
+      if (!base64Data || base64Data.length < 100) {
+        console.error('Snapshot base64 is empty or too small');
+        return;
+      }
+      
+      const fileUri = FileSystem.cacheDirectory + `masked_${Date.now()}.jpg`;
+      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    
+      setMaskedImage(fileUri, false, paths.length > 0);
+      router.push('/new-exam/crop');
     } catch (e) {
       console.error('Failed to export masked image:', e);
     }
   };
+
 
   // ── Error state ──
   if (loadError) {

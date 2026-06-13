@@ -23,26 +23,24 @@ export default function CropScreen() {
       // (Trong thực tế ta có thể lấy qua Image.getSize, ở đây dùng mặc định cắt center)
       // expo-image-manipulator yêu cầu biết Origin width/height hoặc chỉ định crop box.
       // Dùng Image.getSize để lấy chính xác:
-      Image.getSize(maskedImageUri, async (width, height) => {
-        // Cắt 60% ở giữa màn hình như Document yêu cầu
+      // Dùng manipulateAsync không có action để lấy width/height
+        const info = await ImageManipulator.manipulateAsync(
+            maskedImageUri,
+            [], // không transform
+            { format: ImageManipulator.SaveFormat.JPEG }
+        );
+        
+        const width = info.width;
+        const height = info.height;
+        
         const cropWidth = width * 0.6;
         const cropHeight = height * 0.6;
         const originX = (width - cropWidth) / 2;
         const originY = (height - cropHeight) / 2;
 
-        // 2. Manipulate: Crop ảnh & Xóa sạch EXIF tự động
         const manipResult = await ImageManipulator.manipulateAsync(
           maskedImageUri,
-          [
-            { 
-              crop: { 
-                originX: originX, 
-                originY: originY, 
-                width: cropWidth, 
-                height: cropHeight 
-              } 
-            }
-          ],
+          [{ crop: { originX, originY, width: cropWidth, height: cropHeight } }],
           { format: ImageManipulator.SaveFormat.JPEG, compress: 1.0 }
         );
 
