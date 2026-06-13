@@ -1,0 +1,12 @@
+{
+  "name": "dermscreen",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "cd frontend && npm run start",
+    "web": "cd frontend && npm run web",
+    "android": "cd frontend && npm run android",
+    "ios": "cd frontend && npm run ios",
+    "build": "cd frontend && npx expo export --platform web"
+  }
+}

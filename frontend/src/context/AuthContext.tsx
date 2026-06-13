@@ -20,23 +20,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Simple JWT decoder for React Native
+// Simple JWT decoder for React Native (works on web and native)
 function decodeToken(token: string): User | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
+
     // Replace URL safe characters
     let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
     // Pad base64 string
     while (base64.length % 4) {
       base64 += '=';
     }
-    
-    // Decode base64
-    const raw = atob(base64);
+
+    // Decode base64 - use Buffer or atob depending on environment
+    let raw: string;
+    if (typeof Buffer !== 'undefined') {
+      raw = Buffer.from(base64, 'base64').toString('utf-8');
+    } else if (typeof atob === 'function') {
+      raw = atob(base64);
+    } else {
+      // Fallback for environments without atob or Buffer
+      raw = decodeURIComponent(escape(
+        base64.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+      ));
+    }
+
     const decoded = JSON.parse(raw);
-    
+
     return {
       username: decoded.sub,
       role: decoded.role || 'worker',
