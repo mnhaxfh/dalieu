@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useExamStore } from '../../src/store/examStore';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export default function CropScreen() {
   const router = useRouter();

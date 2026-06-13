@@ -5,7 +5,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef } from 'react';
 import { X } from 'lucide-react-native';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const FRAME_SIZE = SCREEN_WIDTH * 0.75;
 
 export default function CaptureScreen() {
   const router = useRouter();
@@ -13,13 +14,13 @@ export default function CaptureScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
 
-  if (!permission) return <View style={{flex:1, backgroundColor:'#000'}} />;
+  if (!permission) return <View style={{ flex: 1, backgroundColor: '#000' }} />;
   if (!permission.granted) {
     return (
       <View style={styles.container}>
         <Text style={styles.permissionText}>Cần quyền truy cập Camera để tiếp tục</Text>
         <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
-          <Text style={{color: '#fff', fontWeight: 'bold'}}>Cấp quyền Camera</Text>
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cấp quyền Camera</Text>
         </TouchableOpacity>
       </View>
     );
@@ -32,27 +33,26 @@ export default function CaptureScreen() {
           quality: 1,
           base64: false,
         });
-        
+
         if (photo && photo.uri) {
           setOriginalImage(photo.uri);
           router.push('/new-exam/quality-check');
         }
       } catch (err) {
-        console.error("Failed to capture image:", err);
+        console.error('Failed to capture image:', err);
       }
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Ép ẩn Header hệ thống một lần nữa để chắc chắn */}
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} />
 
-      {/* Lớp Overlay phủ mờ xung quanh khung ngắm */}
-      <View style={styles.overlayContainer} pointerEvents="box-none">
+      {/* Lớp Overlay phủ mờ - Căn giữa tuyệt đối */}
+      <View style={styles.overlayContainer} pointerEvents="none">
         <View style={styles.maskTop} />
         <View style={styles.maskMiddle}>
           <View style={styles.maskSide} />
@@ -67,55 +67,83 @@ export default function CaptureScreen() {
         <View style={styles.maskBottom} />
       </View>
 
-      {/* UI Controls */}
-      <View style={styles.uiOverlay} pointerEvents="box-none">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
-            <X color="#fff" size={24} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chụp ảnh tổn thương</Text>
-        </View>
+      {/* Nút quay lại - cố định trên cùng */}
+      <View style={styles.header} pointerEvents="box-none">
+        <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+          <X color="#fff" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Chụp ảnh tổn thương</Text>
+      </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.instructions}>Căn vùng tổn thương vào giữa khung hình</Text>
-          <TouchableOpacity style={styles.captureButton} onPress={handleCapture}>
-            <View style={styles.captureInner} />
-          </TouchableOpacity>
-        </View>
+      {/* Nút chụp ảnh - cố định dưới cùng */}
+      <View style={styles.footer} pointerEvents="box-none">
+        <Text style={styles.instructions}>Căn vùng tổn thương vào giữa khung hình</Text>
+        <TouchableOpacity style={styles.captureButton} onPress={handleCapture}>
+          <View style={styles.captureInner} />
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
   permissionText: { color: 'white', textAlign: 'center', marginBottom: 20, fontSize: 16 },
   permissionBtn: { backgroundColor: '#3A7CA5', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 25 },
 
-  // Mask Overlay
   overlayContainer: { ...StyleSheet.absoluteFillObject },
+  // maskTop và maskBottom bằng nhau (flex: 1) => targetFrame ở chính giữa màn hình
   maskTop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  maskMiddle: { flexDirection: 'row', height: SCREEN_WIDTH * 0.75 },
+  maskMiddle: { flexDirection: 'row', height: FRAME_SIZE },
   maskSide: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  targetFrame: { width: SCREEN_WIDTH * 0.75, height: SCREEN_WIDTH * 0.75, backgroundColor: 'transparent' },
-  maskBottom: { flex: 2, backgroundColor: 'rgba(0,0,0,0.4)' },
+  targetFrame: { width: FRAME_SIZE, height: FRAME_SIZE, backgroundColor: 'transparent' },
+  maskBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
 
-  uiOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 50,
-    paddingBottom: 40,
+  // Header neo TRÊN CÙNG bằng absolute
+  header: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 50,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 },
-  closeBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+  },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: '600', marginLeft: 15 },
 
-  footer: { alignItems: 'center', paddingBottom: 20 },
-  instructions: { color: '#fff', marginBottom: 20, fontSize: 13, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
+  // Footer neo DƯỚI CÙNG bằng absolute
+  footer: {
+    position: 'absolute',
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  instructions: {
+    color: '#fff',
+    marginBottom: 20,
+    fontSize: 13,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
   captureButton: {
-    width: 76, height: 76, borderRadius: 38,
-    borderWidth: 4, borderColor: '#fff',
-    justifyContent: 'center', alignItems: 'center',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 4,
+    borderColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   captureInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#fff' },
 
