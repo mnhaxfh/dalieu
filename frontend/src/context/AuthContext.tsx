@@ -20,7 +20,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Simple JWT decoder for React Native (works on web and native)
+declare var Buffer: any;
+
+// Simple JWT decoder for React Native (works on native and web)
 function decodeToken(token: string): User | null {
   try {
     const parts = token.split('.');

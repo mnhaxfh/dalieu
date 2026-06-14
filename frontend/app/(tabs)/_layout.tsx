@@ -4,7 +4,7 @@ import { Camera, Clock, Bell, Settings } from 'lucide-react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { useEffect } from 'react';
 
-function NotificationIcon({ color, size, unreadCount }: { color: string; size: number; unreadCount: number }) {
+function NotificationIcon({ color, size, unreadCount }: { color: any; size: number; unreadCount: number }) {
   return (
     <View>
       <Bell color={color} size={size} strokeWidth={2} />

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Button, Switch, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Image, Platform, StatusBar } from 'react-native';
+import { useRouter, Stack } from 'expo-router';
 import { useExamStore } from '../../src/store/examStore';
 import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api';
+import { ArrowLeft, CloudLightning, AlertTriangle } from 'lucide-react-native';
 
 export default function ReviewScreen() {
   const router = useRouter();
@@ -25,13 +26,19 @@ export default function ReviewScreen() {
     setIsSubmitting(true);
 
     try {
-      // Sử dụng service api tập trung để đảm bảo đồng bộ logic (xử lý Blob/FormData)
+      // Chuẩn bị dữ liệu bệnh lý (định nghĩa JSON chuỗi cho known_conditions để khớp DB backend)
+      const rawNotes = store.demographics.knownConditions || '';
+      const formattedConditions = JSON.stringify({
+        notes: rawNotes,
+        autogen_id: `PT-${store.sessionId.substring(0, 6).toUpperCase()}`
+      });
+
       const responseData = await api.examinations.create(
         {
           age: store.demographics.age,
           sex: store.demographics.sex || 'Other',
           chief_complaint: store.demographics.chiefComplaint || 'Không rõ',
-          known_conditions: store.demographics.knownConditions,
+          known_conditions: formattedConditions, // Đã khớp dạng JSON string
           photoUri: store.finalImageUri,
           photoName: store.finalImageName,
           photoType: store.finalImageType,
@@ -44,7 +51,7 @@ export default function ReviewScreen() {
         `Ca khám đã được nộp thành công.\nID: ${responseData.patient_id}\nTrạng thái: ${responseData.status}`
       );
       
-      // Dọn dẹp session và quay về trang chủ (hoặc tab history)
+      // Dọn dẹp session và quay về trang chủ
       store.startNewSession();
       router.dismissAll();
       router.replace('/(tabs)/history');
@@ -58,50 +65,192 @@ export default function ReviewScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={styles.title}>Step 6: Review & Submit</Text>
+    <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
       
-      <View style={styles.section}>
-        <Text style={styles.subtitle}>Patient Demographics:</Text>
-        <Text>Age: {store.demographics.age}</Text>
-        <Text>Sex: {store.demographics.sex}</Text>
-        <Text>Body Site: {store.demographics.bodySite}</Text>
-        <Text>Complaint: {store.demographics.chiefComplaint}</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ArrowLeft color="#2A3B4C" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>4. Xem lại & Gửi</Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.subtitle}>Image Processing Summary:</Text>
-        <View style={styles.row}>
-          <Text>Remove Hair (Backend AI): </Text>
-          <Switch 
-            value={store.flags.removeHair} 
-            onValueChange={store.setRemoveHairFlag} 
-          />
-        </View>
-        <Text>Eyes Blurred: {store.flags.eyesBlurred ? 'Yes' : 'No'}</Text>
-        <Text style={{ fontSize: 10, color: '#666', marginTop: 10 }}>
-          File: {store.finalImageName}
-        </Text>
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.card}>
+          
+          <Text style={styles.sectionLabel}>ẢNH ĐÃ CROP:</Text>
+          {store.finalImageUri ? (
+            <View style={styles.imagePreviewContainer}>
+              <Image source={{ uri: store.finalImageUri }} style={styles.imagePreview} resizeMode="cover" />
+            </View>
+          ) : (
+            <View style={[styles.imagePreviewContainer, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#eee' }]}>
+              <Text style={{ color: '#6B7280' }}>Chưa có ảnh được chụp</Text>
+            </View>
+          )}
 
-      {isSubmitting ? (
-        <View style={styles.loadingArea}>
-          <ActivityIndicator size="large" color="#28a745" />
-          <Text style={styles.loadingText}>Đang tải ảnh và xử lý dữ liệu...</Text>
+          <Text style={styles.sectionLabel}>THÔNG TIN HÀNH CHÍNH:</Text>
+          <View style={styles.infoSummary}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoKey}>Họ và Tên</Text>
+              <Text style={styles.infoValue}>{store.demographics.knownConditions || 'Chưa điền'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoKey}>Tuổi</Text>
+              <Text style={styles.infoValue}>{store.demographics.age}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoKey}>Giới tính</Text>
+              <Text style={styles.infoValue}>{store.demographics.sex === 'Male' ? 'Nam' : store.demographics.sex === 'Female' ? 'Nữ' : 'Khác'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoKey}>Số điện thoại</Text>
+              <Text style={styles.infoValue}>{store.demographics.bodySite || 'Chưa điền'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoKey}>Địa chỉ</Text>
+              <Text style={styles.infoValue} numberOfLines={2}>{store.demographics.chiefComplaint || 'Chưa điền'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.warningBox}>
+            <AlertTriangle size={18} color="#9CA3AF" style={{ marginTop: 1 }} />
+            <Text style={styles.warningText}>
+              Xác nhận thông tin chính xác trước khi gửi dữ liệu lên hệ thống AI phân tích.
+            </Text>
+          </View>
+
+          {isSubmitting ? (
+            <View style={styles.loadingArea}>
+              <ActivityIndicator size="large" color="#5A73F3" />
+              <Text style={styles.loadingText}>Đang gửi thông tin và ảnh...</Text>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.primaryBtn} onPress={handleSubmit}>
+              <Text style={styles.primaryBtnText}>Xác nhận và Gửi</Text>
+              <CloudLightning size={20} color="#fff" />
+            </TouchableOpacity>
+          )}
+
         </View>
-      ) : (
-        <Button title="Submit Examination" onPress={handleSubmit} color="#28a745" />
-      )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fcfcfc' },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  section: { marginBottom: 20, padding: 15, borderWidth: 1, borderColor: '#eee', borderRadius: 8, backgroundColor: '#fff' },
-  subtitle: { fontWeight: 'bold', marginBottom: 10, fontSize: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', marginVertical: 5 },
-  loadingArea: { alignItems: 'center', marginTop: 20 },
-  loadingText: { marginTop: 10, color: '#666' }
+  container: { flex: 1, backgroundColor: '#FAFAFA' },
+  header: {
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 50,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 20,
+    backgroundColor: '#138E66',
+    borderBottomWidth: 3,
+    borderBottomColor: '#2A3B4C'
+  },
+  backBtn: { padding: 5, marginRight: 10, backgroundColor: '#fff', borderRadius: 20 },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', fontFamily: 'Roboto' },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#2A3B4C',
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 25,
+    elevation: 5
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2A3B4C',
+    marginBottom: 12,
+    fontFamily: 'Roboto',
+    letterSpacing: 0.5
+  },
+  imagePreviewContainer: {
+    width: '100%',
+    aspectRatio: 4 / 5,
+    backgroundColor: '#111',
+    borderRadius: 12,
+    marginBottom: 24,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB'
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%'
+  },
+  infoSummary: {
+    backgroundColor: '#F0F4FA',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(42, 59, 76, 0.05)'
+  },
+  infoKey: {
+    fontSize: 13,
+    color: '#6B7280'
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2A3B4C',
+    textAlign: 'right',
+    flex: 1,
+    marginLeft: 20
+  },
+  warningBox: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 24,
+    paddingRight: 10
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    lineHeight: 18,
+    flex: 1
+  },
+  primaryBtn: {
+    backgroundColor: '#5A73F3',
+    paddingVertical: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    shadowColor: '#5A73F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 2
+  },
+  primaryBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16
+  },
+  loadingArea: {
+    alignItems: 'center',
+    marginVertical: 10
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#6B7280',
+    fontSize: 14
+  }
 });

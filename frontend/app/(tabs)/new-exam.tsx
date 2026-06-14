@@ -1,12 +1,15 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Camera, ShieldCheck, Zap } from 'lucide-react-native';
+import { useExamStore } from '../../src/store/examStore';
 
 export default function NewExamIndex() {
   const router = useRouter();
+  const startNewSession = useExamStore(state => state.startNewSession);
 
   const startExam = () => {
-    router.push('/new-exam/capture');
+    startNewSession();
+    router.push('/new-exam/demographics');
   };
 
   return (
