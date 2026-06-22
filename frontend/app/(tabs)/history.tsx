@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Alert,
+  ActivityIndicator, RefreshControl, Alert, Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { ChevronRight, Camera, Clock, AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api';
-import { STATIC_BASE_URL } from '../../src/config/constants';
+import { resolveStaticUrl } from '../../src/config/constants';
 
 interface Examination {
   id: number;
@@ -50,6 +50,31 @@ function formatDate(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
     ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function ExamThumbnail({ photoUrl }: { photoUrl: string | null }) {
+  const [failed, setFailed] = useState(false);
+  const resolvedUrl = resolveStaticUrl(photoUrl);
+
+  if (!resolvedUrl || failed) {
+    return (
+      <View style={s.thumbnailFallback}>
+        <Camera color="#9ca3af" size={18} />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri: resolvedUrl }}
+      style={s.thumbnail}
+      resizeMode="cover"
+      onError={() => {
+        console.warn('Failed to load history thumbnail:', resolvedUrl);
+        setFailed(true);
+      }}
+    />
+  );
 }
 
 export default function History() {
@@ -113,6 +138,7 @@ export default function History() {
         <View style={s.urgentStripe} />
       )}
       <View style={s.cardContent}>
+        <ExamThumbnail photoUrl={item.photo_url} />
         <View style={s.cardLeft}>
           <Text style={s.patientId}>{item.patient_id}</Text>
           <Text style={s.dateText}>{formatDate(item.created_at)}</Text>
@@ -214,6 +240,12 @@ const s = StyleSheet.create({
   cardContent: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 14,
+    gap: 12,
+  },
+  thumbnail: { width: 54, height: 54, borderRadius: 10, backgroundColor: '#e5e7eb' },
+  thumbnailFallback: {
+    width: 54, height: 54, borderRadius: 10, backgroundColor: '#f3f4f6',
+    alignItems: 'center', justifyContent: 'center',
   },
   cardLeft: { flex: 1, gap: 3 },
   patientId: { fontSize: 14, fontWeight: '700', color: '#111827', fontVariant: ['tabular-nums'] },

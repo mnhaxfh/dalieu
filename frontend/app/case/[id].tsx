@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Image, TouchableOpacity,
-  ActivityIndicator, Alert,
+  ActivityIndicator, Alert, Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import {
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api';
-import { STATIC_BASE_URL } from '../../src/config/constants';
+import { resolveStaticUrl } from '../../src/config/constants';
 
 interface Examination {
   id: number;
@@ -49,12 +49,14 @@ export default function CaseDetail() {
   const [exam, setExam] = useState<Examination | null>(null);
   const [loading, setLoading] = useState(true);
   const [urgentLoading, setUrgentLoading] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   const fetchExam = useCallback(async () => {
     if (!token || !id) return;
     try {
       const data = await api.examinations.get(id, token);
       setExam(data);
+      setPhotoFailed(false);
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to load examination.');
       router.back();
@@ -108,21 +110,27 @@ export default function CaseDetail() {
   const cfg = STATUS_CONFIG[exam.status] ?? { color: '#374151', bg: '#f3f4f6', icon: Clock };
   const StatusIcon = cfg.icon;
   const isReviewed = exam.status === 'Completed' || exam.status === 'Urgent';
-  const photoUrl = exam.photo_url
-    ? (exam.photo_url.startsWith('http')
-        ? exam.photo_url
-        : `${STATIC_BASE_URL}${exam.photo_url.startsWith('/') ? '' : '/'}${exam.photo_url}`)
-    : null;
+  const photoUrl = resolveStaticUrl(exam.photo_url);
 
   return (
     <View style={s.root}>
       <ScrollView contentContainerStyle={s.scroll}>
         {/* Photo */}
-        {photoUrl ? (
-          <Image source={{ uri: photoUrl }} style={s.photo} resizeMode="cover" />
+        {photoUrl && !photoFailed ? (
+          <Image
+            source={{ uri: photoUrl }}
+            style={s.photo}
+            resizeMode="cover"
+            onError={() => {
+              console.warn('Failed to load case photo:', photoUrl);
+              setPhotoFailed(true);
+            }}
+          />
         ) : (
           <View style={s.photoPlaceholder}>
-            <Text style={s.photoPlaceholderText}>No photo available</Text>
+            <Text style={s.photoPlaceholderText}>
+              {photoUrl ? 'Photo failed to load' : 'No photo available'}
+            </Text>
           </View>
         )}
 
@@ -268,5 +276,3 @@ const s = StyleSheet.create({
   btnDisabled: { opacity: 0.6 },
   urgentBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
 });
-
-import { Platform } from 'react-native';

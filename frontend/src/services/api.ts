@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import { API_BASE_URL } from '../config/constants';
 
 interface RequestOptions {
@@ -21,10 +20,7 @@ async function request(path: string, options: RequestOptions) {
     }
 
     if (!response.ok) {
-      let errorMsg = `Request failed with status ${response.status}`;
-
-      // Log chi tiết lỗi ra console để debug
-      console.error(`Full error response from ${path}:`, responseData);
+      let errorMsg = `Yêu cầu thất bại (Mã lỗi: ${response.status})`;
 
       if (typeof responseData === 'object' && responseData) {
         const detail = (responseData as any).detail;
@@ -34,18 +30,16 @@ async function request(path: string, options: RequestOptions) {
             .join(', ');
         } else if (detail) {
           errorMsg = String(detail);
-        } else {
-          errorMsg = JSON.stringify(responseData);
         }
-      } else if (responseData) {
-        // Nếu Server trả về HTML (trang lỗi 500 mặc định), chỉ lấy một đoạn ngắn
-        errorMsg = String(responseData).substring(0, 200);
       }
       throw new Error(errorMsg);
     }
     return responseData;
   } catch (error: any) {
-    console.error(`API Error on ${options.method} ${path}:`, error);
+    console.error(`API Error:`, error);
+    if (error.message.includes('Network request failed')) {
+      throw new Error('Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng.');
+    }
     throw error;
   }
 }
@@ -56,12 +50,7 @@ export const api = {
       return request('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: payload.username,
-          full_name: payload.full_name,
-          role: payload.role || 'worker',
-          password: payload.password,
-        }),
+        body: JSON.stringify(payload),
       });
     },
 
@@ -77,9 +66,7 @@ export const api = {
 
       return request('/auth/login', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/x-www-form-urlencoded' 
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formBody,
       });
     },
@@ -87,7 +74,7 @@ export const api = {
     async logout(token: string) {
       return request('/auth/logout', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -116,18 +103,7 @@ export const api = {
       });
     },
 
-    async create(
-      payload: {
-        age: number;
-        sex: string;
-        chief_complaint: string;
-        known_conditions?: string; // stringified JSON
-        photoUri: string;
-        photoName?: string;
-        photoType?: string;
-      },
-      token: string
-    ) {
+    async create(payload: any, token: string) {
       const formData = new FormData();
       formData.append('age', payload.age.toString());
       formData.append('sex', payload.sex);
@@ -138,33 +114,19 @@ export const api = {
       }
 
       const uri = payload.photoUri;
-      const uriParts = uri.split('.');
-      const fileExt = uriParts[uriParts.length - 1].toLowerCase();
-      const name = payload.photoName || `photo-${Date.now()}.${fileExt}`;
-      const type = payload.photoType || `image/${fileExt === 'png' ? 'png' : 'jpeg'}`;
+      const type = payload.photoType || 'image/jpeg';
+      const name = payload.photoName || `upload_${Date.now()}.jpg`;
 
-      try {
-        // Đọc file thành Blob bằng XMLHttpRequest
-        const blob: any = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.onload = function () {
-            resolve(xhr.response);
-          };
-          xhr.onerror = function (e) {
-            reject(new TypeError("Network request failed"));
-          };
-          xhr.responseType = "blob";
-          xhr.open("GET", uri, true);
-          xhr.send(null);
-        });
+      const blob: any = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => resolve(xhr.response);
+        xhr.onerror = () => reject(new TypeError("Lỗi xử lý tệp tin ảnh"));
+        xhr.responseType = "blob";
+        xhr.open("GET", uri, true);
+        xhr.send(null);
+      });
 
-        // Đảm bảo Blob có type chính xác để Backend không từ chối
-        const finalFile = new Blob([blob], { type });
-        formData.append('photo', finalFile, name);
-      } catch (e) {
-        console.error('Failed to prepare photo blob:', e);
-        throw new Error('Could not process photo for upload.');
-      }
+      formData.append('photo', blob, name);
 
       return request('/examinations', {
         method: 'POST',

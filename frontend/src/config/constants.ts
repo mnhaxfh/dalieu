@@ -8,10 +8,16 @@ const LOCAL_HOST = Platform.select({
   default: 'http://localhost:8000',
 });
 
-const BASE_URL = ENV_BASE_URL || LOCAL_HOST;
+const BASE_URL = (ENV_BASE_URL || LOCAL_HOST).replace(/\/+$/, '');
 
 export const API_BASE_URL = `${BASE_URL}/api`;
 export const STATIC_BASE_URL = BASE_URL;
+
+export function resolveStaticUrl(path?: string | null) {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${STATIC_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+}
 
 export const APP_VERSION = '1.0.0';
 export const SUPPORT_EMAIL = 'support@dermscreen.org';

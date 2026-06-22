@@ -13,6 +13,8 @@ export interface Demographics {
   chiefComplaint: string;
   bodySite: string;
   knownConditions?: string;
+  conditionTags: string[];
+  conditionNote: string;
 }
 
 export interface ExamFlags {
@@ -53,6 +55,8 @@ const initialDemographics: Demographics = {
   sex: '',
   chiefComplaint: '',
   bodySite: 'other',
+  conditionTags: [],
+  conditionNote: '',
 };
 
 const initialQuality: QualityCheck = {

@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingBottom: 20,
-    backgroundColor: '#138E66',
+    backgroundColor: '#3a7ca5',
     borderBottomWidth: 3,
     borderBottomColor: '#2A3B4C'
   },
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
   bullet: {
     fontSize: 16,
-    color: '#138E66',
+    color: '#3a7ca5',
     marginRight: 8,
     lineHeight: 18
   },
@@ -155,8 +155,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff'
   },
   checkboxChecked: {
-    backgroundColor: '#5A73F3',
-    borderColor: '#2A3B4C'
+    backgroundColor: '#3a7ca5',
+    borderColor: '#3a7ca5'
   },
   checkboxLabel: {
     fontSize: 15,
@@ -164,11 +164,11 @@ const styles = StyleSheet.create({
     color: '#2A3B4C'
   },
   primaryBtn: {
-    backgroundColor: '#5A73F3',
+    backgroundColor: '#3a7ca5',
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',
-    shadowColor: '#5A73F3',
+    shadowColor: '#3a7ca5',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,

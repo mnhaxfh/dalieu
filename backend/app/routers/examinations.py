@@ -46,6 +46,9 @@ def _normalize_photo_url(photo_url: str, upload_files: set[str] | None = None) -
 	if not filename:
 		return photo_url
 
+	if settings.STORAGE_BACKEND == "minio":
+		return f"/media/{filename}"
+
 	if upload_files is None:
 		try:
 			upload_files = set(os.listdir(settings.UPLOAD_DIR))

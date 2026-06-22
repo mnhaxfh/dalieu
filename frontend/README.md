@@ -41,6 +41,26 @@ $env:EXPO_PUBLIC_API_BASE_URL = "http://192.168.1.50:8000"
 npm run start
 ```
 
+## Localtunnel
+
+When sharing the web frontend through localtunnel, expose both services:
+
+```powershell
+# Terminal 1: backend
+cd ..\backend
+docker compose up
+npx localtunnel --port 8000 --subdomain mnhaxfh 
+
+# Terminal 3: frontend, using the backend tunnel URL from Terminal 2
+cd ..\frontend
+npm run start
+
+# Terminal 4: frontend tunnel
+npx localtunnel --port 8081 --subdomain dermscreen
+```
+
+The frontend tunnel URL is the URL you share with other people. The API base URL must be the backend tunnel URL, not `localhost`, because `localhost` in another browser means that user's computer.
+
 ## Build Release (EAS)
 
 If you want a production app (no Expo Go), use EAS Build to generate AAB/IPA.

@@ -19,8 +19,7 @@ def get_minio_client() -> Minio | None:
 
 def get_public_url(filename: str) -> str:
     if settings.STORAGE_BACKEND == "minio":
-        endpoint = settings.MINIO_PUBLIC_URL or f"http://{settings.MINIO_ENDPOINT or 'localhost:9000'}"
-        return f"{endpoint}/{settings.MINIO_BUCKET}/{filename}"
+        return f"/media/{filename}"
     return f"/static/uploads/{filename}"
 
 def save_upload_file(

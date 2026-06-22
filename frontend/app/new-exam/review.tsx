@@ -12,6 +12,18 @@ export default function ReviewScreen() {
   const { token } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const sexLabel = store.demographics.sex === 'Male'
+    ? 'Nam'
+    : store.demographics.sex === 'Female'
+      ? 'Nữ'
+      : store.demographics.sex === 'Other'
+        ? 'Khác'
+        : 'Chưa chọn';
+  const conditionSummary = [
+    ...(store.demographics.conditionTags || []),
+    store.demographics.conditionNote?.trim() ? `Khác: ${store.demographics.conditionNote.trim()}` : '',
+  ].filter(Boolean).join('; ') || store.demographics.knownConditions || 'Không có';
+
   const handleSubmit = async () => {
     if (!store.finalImageUri) {
       Alert.alert("Lỗi", "Không tìm thấy ảnh đã xử lý để gửi.");
@@ -92,24 +104,24 @@ export default function ReviewScreen() {
           <Text style={styles.sectionLabel}>THÔNG TIN HÀNH CHÍNH:</Text>
           <View style={styles.infoSummary}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoKey}>Họ và Tên</Text>
-              <Text style={styles.infoValue}>{store.demographics.knownConditions || 'Chưa điền'}</Text>
-            </View>
-            <View style={styles.infoRow}>
               <Text style={styles.infoKey}>Tuổi</Text>
-              <Text style={styles.infoValue}>{store.demographics.age}</Text>
+              <Text style={styles.infoValue}>{store.demographics.age || 'Chưa điền'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoKey}>Giới tính</Text>
-              <Text style={styles.infoValue}>{store.demographics.sex === 'Male' ? 'Nam' : store.demographics.sex === 'Female' ? 'Nữ' : 'Khác'}</Text>
+              <Text style={styles.infoValue}>{sexLabel}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoKey}>Số điện thoại</Text>
+              <Text style={styles.infoKey}>Vị trí tổn thương</Text>
               <Text style={styles.infoValue}>{store.demographics.bodySite || 'Chưa điền'}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoKey}>Địa chỉ</Text>
-              <Text style={styles.infoValue} numberOfLines={2}>{store.demographics.chiefComplaint || 'Chưa điền'}</Text>
+              <Text style={styles.infoKey}>Triệu chứng / Lý do</Text>
+              <Text style={styles.infoValue}>{store.demographics.chiefComplaint || 'Chưa điền'}</Text>
+            </View>
+            <View style={[styles.infoRow, styles.infoRowLast]}>
+              <Text style={styles.infoKey}>Tình trạng bệnh lý</Text>
+              <Text style={styles.infoValue}>{conditionSummary}</Text>
             </View>
           </View>
 
@@ -122,7 +134,7 @@ export default function ReviewScreen() {
 
           {isSubmitting ? (
             <View style={styles.loadingArea}>
-              <ActivityIndicator size="large" color="#5A73F3" />
+              <ActivityIndicator size="large" color="#3a7ca5" />
               <Text style={styles.loadingText}>Đang gửi thông tin và ảnh...</Text>
             </View>
           ) : (
@@ -146,7 +158,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingBottom: 20,
-    backgroundColor: '#138E66',
+    backgroundColor: '#3a7ca5',
     borderBottomWidth: 3,
     borderBottomColor: '#2A3B4C'
   },
@@ -201,6 +213,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(42, 59, 76, 0.05)'
   },
+  infoRowLast: {
+    borderBottomWidth: 0,
+    marginBottom: 0,
+    paddingBottom: 0,
+  },
   infoKey: {
     fontSize: 13,
     color: '#6B7280'
@@ -226,14 +243,14 @@ const styles = StyleSheet.create({
     flex: 1
   },
   primaryBtn: {
-    backgroundColor: '#5A73F3',
+    backgroundColor: '#3a7ca5',
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 10,
-    shadowColor: '#5A73F3',
+    shadowColor: '#3a7ca5',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
